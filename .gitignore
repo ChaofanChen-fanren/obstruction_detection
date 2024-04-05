@@ -1,0 +1,6 @@
+data/
+DRIVE/
+save_weight
+__pycache__
+.idea/
+.DS_Store
