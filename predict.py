@@ -16,24 +16,27 @@ def time_synchronized():
 
 def main():
     classes = 1  # exclude background
-    weights_path = "./save_weight/obstarction_model.pth"
+    weights_path = "./save_weights/best_thrombus_model.pth"
     # img_path = "./DRIVE/test/images/01_test.tif"
-    img_path = "./testImage/29.jpg"
+    img_path = "./testImage/13.jpg"
 
     # roi_mask_path = "./DRIVE/test/mask/01_test_mask.gif"
     assert os.path.exists(weights_path), f"weights {weights_path} not found."
     assert os.path.exists(img_path), f"image {img_path} not found."
     # assert os.path.exists(roi_mask_path), f"image {roi_mask_path} not found."
 
-    mean = (0.709, 0.381, 0.224)
-    std = (0.127, 0.079, 0.043)
+    # mean = (0.709, 0.381, 0.224)
+    # std = (0.127, 0.079, 0.043)
+
+    mean = (0.541, 0.601, 0.692)
+    std = (0.096, 0.108, 0.142)
 
     # get devices
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
     # create model
-    model = UNet(in_channels=3, num_classes=classes+1, base_c=32)
+    model = UNet(in_channels=3, num_classes=classes+1, base_c=32, bilinear=False)
 
     # load weights
     model.load_state_dict(torch.load(weights_path, map_location='cpu')['model'])

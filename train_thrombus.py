@@ -6,6 +6,8 @@ import torch
 
 from src import UNet
 from src import VGG16UNet
+from src import  CabmUnet
+from src import CAUnet
 from train_utils import train_one_epoch, evaluate, create_lr_scheduler
 from my_dataset import DriveDataset
 import transforms as T
@@ -45,8 +47,8 @@ class SegmentationPresetEval:
 
 
 def get_transform(train, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
-    base_size = 565
-    crop_size = 480
+    base_size = 640
+    crop_size = 512
 
     if train:
         return SegmentationPresetTrain(base_size, crop_size, mean=mean, std=std)
@@ -55,8 +57,11 @@ def get_transform(train, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
 
 
 def create_model(num_classes):
-    # model = UNet(in_channels=3, num_classes=num_classes, base_c=32)
-    model = VGG16UNet(num_classes=num_classes,pretrain_backbone=False)
+    model = UNet(in_channels=3, num_classes=num_classes, base_c=32, bilinear=False)
+    # model = CAUnet(in_channels=3, num_classes=2, bilinear=False, base_c=32)
+    # model = CabmUnet(in_channels=3, num_classes=2, bilinear=False, base_c=32)
+    # model = VGG16UNet(num_classes=num_classes,pretrain_backbone=False)
+    # model = MobileV3Unet(num_classes=num_classes,pretrain_backbone=False)
     return model
 
 
@@ -67,11 +72,11 @@ def main(args):
     num_classes = args.num_classes + 1
 
     # using compute_mean_std.py
-    mean = (0.709, 0.381, 0.224)
-    std = (0.127, 0.079, 0.043)
+    mean = (0.541, 0.601, 0.692)
+    std = (0.096, 0.108, 0.142)
 
     # 用来保存训练以及验证过程中信息
-    results_file = "results{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    results_file = "results_thrombus_{}.txt".format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
     train_dataset = DriveDataset(args.data_path,
                                  train=True,
@@ -153,9 +158,9 @@ def main(args):
             save_file["scaler"] = scaler.state_dict()
 
         if args.save_best is True:
-            torch.save(save_file, "save_weights/best_model.pth")
-        else:
-            torch.save(save_file, "save_weights/model_{}.pth".format(epoch))
+            torch.save(save_file, "save_weights/best_thrombus_model.pth")
+        else :
+            torch.save(save_file, "save_weights/model_thrombus_{}.pth".format(epoch))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -166,12 +171,12 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description="pytorch unet training")
 
-    parser.add_argument("--data-path", default="./data/", help="DRIVE root")
+    parser.add_argument("--data-path", default="./data/thrombus/", help="data root")
     # exclude background
     parser.add_argument("--num-classes", default=1, type=int)
     parser.add_argument("--device", default="cuda", help="training device")
-    parser.add_argument("-b", "--batch-size", default=4, type=int)
-    parser.add_argument("--epochs", default=200, type=int, metavar="N",
+    parser.add_argument("-b", "--batch-size", default=8, type=int)
+    parser.add_argument("--epochs", default=300, type=int, metavar="N",
                         help="number of total epochs to train")
 
     parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
@@ -180,7 +185,7 @@ def parse_args():
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--print-freq', default=1, type=int, help='print frequency')
+    parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='start epoch')
